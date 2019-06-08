@@ -1,6 +1,7 @@
 import glob
 from bs4 import BeautifulSoup
 import json
+from dateutil import parser
 
 def extract_goals(soup, top_level_selector):
     goals = []
@@ -18,6 +19,7 @@ def extract_json(file):
         soup = BeautifulSoup(html_file.read(), "html.parser")
         document["IdMatch"] = soup.select("div.mh.result")[0]["data-id"]
         document["StageName"] = [{"Description": soup.select("div.mh-i-round")[0].text}]
+        document["Date"] = parser.parse(soup.select("table.match-data td")[0].text).strftime("%Y-%m-%d")
         document["HomeTeam"] = {
             "IdTeam": soup.select("div.home")[0]["data-team-id"],
             "Score": int(soup.select("div.s-score span.s-scoreText")[0].text.split("-")[0]),
