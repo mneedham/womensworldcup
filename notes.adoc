@@ -1,0 +1,22 @@
+Players
+
+https://www.fifa.com/womensworldcup/archive/germany2011/teams/team=1888631/players.html
+https://www.fifa.com/womensworldcup/players/player/<player_id>
+
+Matches
+
+https://www.fifa.com/womensworldcup/archive/chinapr1991/matches/index.html
+https://api.fifa.com/api/v1/live/football/103/278513/278527/<match_id>
+
+Teams
+https://www.fifa.com/womensworldcup/archive/canada2015/teams/index.html 
+
+World Cups
+
+canada2015,Canada 2015
+germany2011,Germany 2011
+china2007,China 2007
+usa2003,USA 2003
+usa1999,USA 1999
+sweden1995,Sweden1995
+chinapr1991,China PR 1991
