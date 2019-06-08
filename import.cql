@@ -33,3 +33,13 @@ MERGE (home)-[homePlayed:PLAYED_IN]->(match)
 SET homePlayed.score = value.HomeTeam.Score, homePlayed.penaltyScore = value.HomeTeamPenaltyScore
 MERGE (away)-[awayPlayed:PLAYED_IN]->(match)
 SET awayPlayed.score = value.AwayTeam.Score, awayPlayed.penaltyScore = value.AwayTeamPenaltyScore
+
+FOREACH (goal IN [v in value.HomeTeam.Goals WHERE not v.IdPlayer  is null] |
+  MERGE (p:Player {id: goal.IdPlayer})
+  MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
+)
+
+FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
+  MERGE (p:Player {id: goal.IdPlayer})
+  MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
+)
