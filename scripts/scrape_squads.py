@@ -7,7 +7,7 @@ with open("data/squads.json", "w") as squads_file:
     for dir in os.listdir("data/raw/tournaments"):
         if os.path.isdir(f"data/raw/tournaments/{dir}"):
             print(dir)
-            for file in glob.glob(f"data/raw/tournaments/{dir}/*.html"):
+            for file in glob.glob(f"data/raw/tournaments/{dir}/squads/*.html"):
                 print(file)
                 team_id = file.split("/")[-1].replace(".html", "")
                 squad_json = {"shortName": dir, "year": int(dir[-4:]), "teamId": team_id, "players": []}
