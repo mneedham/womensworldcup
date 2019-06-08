@@ -10,6 +10,8 @@ with open("data/tournaments.json", "w") as tournaments_file:
 
         with open(file, "r") as fh:
             soup = BeautifulSoup(fh.read(), "html.parser")
+            name = list(soup.select("h1 a")[0].children)[0].replace("FIFA Women's World Cup ", "").replace("\u00e2\u0084\u00a2", "")
+            tournament_json["name"] = name
             for team in soup.select("div#qualifiedteamscontainer li a"):
                 print(team)
                 tournament_json["teams"].append({"team": team.text, "id": team["href"].split("/")[-2].replace("team=", "")})

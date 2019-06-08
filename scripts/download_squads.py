@@ -9,7 +9,7 @@ with open("data/tournaments.json", "r") as tournaments_file:
         year = document["year"]
         for team in document["teams"]:
             print(team)
-            tournament_dir = f"data/raw/tournaments/{short_name}"
+            tournament_dir = f"data/raw/tournaments/squads/{short_name}"
             if not os.path.isdir(tournament_dir):
                 os.mkdir(tournament_dir)
             location = f"{tournament_dir}/{team['id']}.html"
