@@ -4,22 +4,23 @@ MERGE (tourn:Tournament {year: value.year})
 SET tourn.shortName = value.shortName, tourn.name = value.name
 FOREACH(team in value.teams |
   MERGE (t:Team {id: team.id}) SET t.name = team.team
-  MERGE (t)-[:PARTICIPATED_IN]->(tourn))
+  MERGE (t)-[:PARTICIPATED_IN]->(tourn));
 
 
-CALL apoc.load.json("file:///squads.json")
-YIELD value
-MATCH (team:Team {id: value.teamId})
-MATCH (tourn:Tournament {shortName: value.shortName})
-MERGE (squad:Squad {id: team.name + " in " + tourn.year})
-MERGE (team)-[:NAMED]->(squad)
-MERGE (squad)-[:FOR]->(tourn)
-WITH *
-UNWIND value.players AS player
-MERGE (p:Player {id: player.id})
-SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE datetime(player.dob) END
-MERGE (p)-[:IN_SQUAD]->(squad);
-
+  CALL apoc.load.json("file:///squads.json")
+  YIELD value
+  MATCH (team:Team {id: value.teamId})
+  MATCH (tourn:Tournament {shortName: value.shortName})
+  MERGE (squad:Squad {id: team.name + " in " + tourn.year})
+  MERGE (team)-[:NAMED]->(squad)
+  MERGE (squad)-[:FOR]->(tourn)
+  WITH *
+  UNWIND value.players AS player
+  MERGE (p:Person {id: player.id})
+  SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE datetime(player.dob) END
+  WITH *
+  CALL apoc.do.when(player.role = "0", 'SET p:Coach MERGE (p)-[:COACH_FOR]->(squad)', 'SET p:Player MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
+  RETURN count(*);
 
 CALL apoc.load.json("file:///matches.json")
 YIELD value
@@ -35,11 +36,14 @@ MERGE (away)-[awayPlayed:PLAYED_IN]->(match)
 SET awayPlayed.score = value.AwayTeam.Score, awayPlayed.penaltyScore = value.AwayTeamPenaltyScore
 
 FOREACH (goal IN [v in value.HomeTeam.Goals WHERE not v.IdPlayer  is null] |
-  MERGE (p:Player {id: goal.IdPlayer})
+  MERGE (p:Person {id: goal.IdPlayer})
   MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
 )
 
 FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
-  MERGE (p:Player {id: goal.IdPlayer})
+  MERGE (p:Person {id: goal.IdPlayer})
   MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
 );
+
+MATCH (p:Person)-[:IN_SQUAD]-()<-[:NAMED]-(team:Team)
+MERGE (p)-[:REPRESENTS]->(team);

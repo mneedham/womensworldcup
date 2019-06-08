@@ -1,5 +1,5 @@
 // Players who were named in the most World Cup Squads
-MATCH (player:Player)-[:IN_SQUAD]->(s)<-[:NAMED]-(team), (s)-[:FOR]->(tourn)
+MATCH (player:Person)-[:IN_SQUAD]->(s)<-[:NAMED]-(team), (s)-[:FOR]->(tourn)
 RETURN player.name AS player, team.name, count(*) AS squads, apoc.coll.sort(collect(tourn.year)) AS years
 ORDER BY squads DESC
 LIMIT 10;
@@ -21,13 +21,20 @@ RETURN tourn.name, tourn.year,  team1.name, team2.name,
 ORDER BY tourn.year;
 
 // Top Scorers
-match (p:Player)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn)
-return p.name, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+match (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn), (p)-[:REPRESENTS]->(team)
+return p.name, team.name AS team, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
 ORDER BY goals DESC;
 
 // Goals scored by Marta
-match (p:Player {name: "MARTA"})-[sg:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
+match (p:Person {name: "MARTA"})-[sg:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
       (team)-[:PLAYED_IN]->(match)
-WHERE not (p)-[:IN_SQUAD]->()<-[:NAMED]-(team)
+WHERE not (p)-[:REPRESENTS]-(team)
 return match.id, tourn.year, tourn.name, team.name AS opponent, count(sg) AS goals
 ORDER BY tourn.year
+
+// Players who also coached
+match (p:Person)
+MATCH (p)-[:IN_SQUAD]->(s:Squad)<-[:NAMED]-(:Team)-[:PARTICIPATED_IN]->(tourn:Tournament), (s)-[:FOR]->(tourn)
+WITH p, apoc.coll.sort(collect(tourn.year)) AS playerYears
+MATCH (p)-[:COACH_FOR]->(s:Squad)<-[:NAMED]-(:Team)-[:PARTICIPATED_IN]->(tourn:Tournament), (s)-[:FOR]->(tourn)
+RETURN p.name, apoc.coll.sort(collect(tourn.year)) AS coachYears, playerYears
