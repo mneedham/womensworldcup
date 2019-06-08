@@ -19,3 +19,15 @@ RETURN tourn.name, tourn.year,  team1.name, team2.name,
             ELSE
              CASE WHEN t1.penaltyScore > t2.penaltyScore THEN team1 ELSE team2 END END).name AS winner
 ORDER BY tourn.year;
+
+// Top Scorers
+match (p:Player)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn)
+return p.name, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+ORDER BY goals DESC;
+
+// Goals scored by Marta
+match (p:Player {name: "MARTA"})-[sg:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
+      (team)-[:PLAYED_IN]->(match)
+WHERE not (p)-[:IN_SQUAD]->()<-[:NAMED]-(team)
+return match.id, tourn.year, tourn.name, team.name AS opponent, count(sg) AS goals
+ORDER BY tourn.year
