@@ -42,4 +42,4 @@ FOREACH (goal IN [v in value.HomeTeam.Goals WHERE not v.IdPlayer  is null] |
 FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
   MERGE (p:Player {id: goal.IdPlayer})
   MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
-)
+);
