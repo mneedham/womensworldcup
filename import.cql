@@ -19,7 +19,7 @@ UNWIND value.players AS player
 MERGE (p:Person {id: player.id})
 SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE date(player.dob) END
 WITH *
-CALL apoc.do.when(player.role = "0", 'SET p:Coach MERGE (p)-[:COACH_FOR]->(squad)', 'SET p:Player MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
+CALL apoc.do.when(player.role = "0", 'MERGE (p)-[:COACH_FOR]->(squad)', 'MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
 RETURN count(*);
 
 CALL apoc.load.json("file:///matches.json")

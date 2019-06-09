@@ -1,4 +1,4 @@
 = Women's World Cup Graph
 
 
-image::graph-model.png[]
+image::images/graph-model2.png[]
