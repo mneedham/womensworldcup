@@ -17,3 +17,7 @@ for tournament in tournaments:
         response = requests.get(f"https://www.fifa.com/womensworldcup/archive/{tournament}/matches/index.html")
         with open(location, "w") as tournament_file:
             tournament_file.write(response.text)
+
+with open("data/raw/tournaments/france2019/matches.html", "w") as tournament_file:
+    response = requests.get("https://www.fifa.com/womensworldcup/matches/")
+    tournament_file.write(response.text)

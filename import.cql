@@ -17,7 +17,7 @@ MERGE (squad)-[:FOR]->(tourn)
 WITH *
 UNWIND value.players AS player
 MERGE (p:Person {id: player.id})
-SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE date(player.dob) END
+ON CREATE SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE date(player.dob) END
 WITH *
 CALL apoc.do.when(player.role = "0", 'MERGE (p)-[:COACH_FOR]->(squad)', 'MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
 RETURN count(*);
