@@ -1,4 +1,4 @@
-CALL apoc.load.json("file:///tournaments.json")
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/tournaments.json")
 YIELD value
 MERGE (tourn:Tournament {year: value.year})
 SET tourn.shortName = value.shortName, tourn.name = value.name
@@ -7,7 +7,7 @@ FOREACH(team in value.teams |
   MERGE (t)-[:PARTICIPATED_IN]->(tourn));
 
 
-CALL apoc.load.json("file:///squads.json")
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/squads.json")
 YIELD value
 MATCH (team:Team {id: value.teamId})
 MATCH (tourn:Tournament {shortName: value.shortName})
@@ -22,7 +22,7 @@ WITH *
 CALL apoc.do.when(player.role = "0", 'MERGE (p)-[:COACH_FOR]->(squad)', 'MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
 RETURN count(*);
 
-CALL apoc.load.json("file:///matches.json")
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/matches.json")
 YIELD value
 MATCH (tourn:Tournament {name: value.SeasonShortName[0].Description})
 MATCH (home:Team {id: value.HomeTeam.IdTeam})
@@ -68,10 +68,7 @@ FOREACH (sub IN [v in value.AwayTeam.Substitutions WHERE not v.IdPlayerOn is nul
   MERGE (p:Person {id: sub.IdPlayerOn})
   MERGE (p)-[playedIn:PLAYED_IN]->(match)
   SET playedIn.minuteOn = sub.Minute, playedIn.type = "Subbed On"
-)
-
-
-;
+);
 
 MATCH (p:Person)-[:IN_SQUAD]-()<-[:NAMED]-(team:Team)
 MERGE (p)-[:REPRESENTS]->(team);
