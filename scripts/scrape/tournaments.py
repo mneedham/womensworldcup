@@ -2,11 +2,22 @@ import glob
 from bs4 import BeautifulSoup
 import json
 
+tournaments = {
+    "canada2015": "266030",
+    "germany2011": "251475",
+    "china2007": "10232",
+    "usa2003": "6929",
+    "usa1999": "4644",
+    "sweden1995": "4654",
+    "chinapr1991": "3373",
+    "france2019": "278513"
+}
+
 with open("data/tournaments.json", "w") as tournaments_file:
     for file in glob.glob("data/raw/tournaments/*.html"):
         print(file)
         short_name = file.split("/")[-1].replace(".html", "")
-        tournament_json = {"shortName": short_name, "year": int(short_name[-4:]), "teams": []}
+        tournament_json = {"id": tournaments[short_name], "shortName": short_name, "year": int(short_name[-4:]), "teams": []}
         if "france2019" in file:
             with open(file, "r") as fh:
                 soup = BeautifulSoup(fh.read(), "html.parser")

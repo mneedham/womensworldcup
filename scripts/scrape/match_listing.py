@@ -14,7 +14,7 @@ def extract_goals(soup, top_level_selector):
     return goals
 
 def extract_json(file):
-    document = {"SeasonShortName": [{"Description": "China 2007"}]}
+    document = {"SeasonShortName": [{"Description": "China 2007"}], "IdSeason": "10232"}
     with open(file, "r") as html_file:
         soup = BeautifulSoup(html_file.read(), "html.parser")
         document["IdMatch"] = soup.select("div.mh.result")[0]["data-id"]

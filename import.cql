@@ -1,7 +1,10 @@
+CREATE CONSTRAINT ON (t:Tournament)
+ASSERT t.id IS UNIQUE;
+
 CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/tournaments.json")
 YIELD value
-MERGE (tourn:Tournament {year: value.year})
-SET tourn.shortName = value.shortName, tourn.name = value.name
+MERGE (tourn:Tournament {id: value.id})
+SET tourn.shortName = value.shortName, tourn.name = value.name, tourn.year = value.year
 FOREACH(team in value.teams |
   MERGE (t:Team {id: team.id}) SET t.name = team.team
   MERGE (t)-[:PARTICIPATED_IN]->(tourn));
