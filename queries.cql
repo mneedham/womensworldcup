@@ -25,6 +25,15 @@ match (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn), (p)-[:REPRES
 return p.name, team.name AS team, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
 ORDER BY goals DESC;
 
+// Top Scorers + Appearances
+MATCH (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn), (p)-[:REPRESENTS]->(team)
+WITH p, team, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years,
+     size((p)-[:PLAYED_IN]->()) AS matches,
+     size([(p)-[pi:PLAYED_IN]->() WHERE exists(pi.minuteOn) | pi]) AS subs
+return p.name, team.name AS team, goals, years,
+CASE WHEN subs > 0 THEN matches + " (" + subs + ")" ELSE toString(matches) END AS matches
+ORDER BY goals DESC
+
 // Goals scored by Marta
 match (p:Person {name: "MARTA"})-[sg:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
       (team)-[:PLAYED_IN]->(match)

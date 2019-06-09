@@ -48,13 +48,30 @@ FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
 
 FOREACH (player IN [v in value.HomeTeam.Players WHERE v.Status = 1] |
   MERGE (p:Person {id: player.IdPlayer})
-  MERGE (p)-[:PLAYED_IN]->(match)
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.type = "Started"
 )
 
 FOREACH (player IN [v in value.AwayTeam.Players WHERE v.Status = 1] |
   MERGE (p:Person {id: player.IdPlayer})
-  MERGE (p)-[:PLAYED_IN]->(match)
-);
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.type = "Started"
+)
+
+FOREACH (sub IN [v in value.HomeTeam.Substitutions WHERE not v.IdPlayerOn is null] |
+  MERGE (p:Person {id: sub.IdPlayerOn})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.minuteOn = sub.Minute, playedIn.type = "Subbed On"
+)
+
+FOREACH (sub IN [v in value.AwayTeam.Substitutions WHERE not v.IdPlayerOn is null] |
+  MERGE (p:Person {id: sub.IdPlayerOn})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.minuteOn = sub.Minute, playedIn.type = "Subbed On"
+)
+
+
+;
 
 MATCH (p:Person)-[:IN_SQUAD]-()<-[:NAMED]-(team:Team)
 MERGE (p)-[:REPRESENTS]->(team);
