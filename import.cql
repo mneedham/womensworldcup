@@ -44,6 +44,16 @@ FOREACH (goal IN [v in value.HomeTeam.Goals WHERE not v.IdPlayer  is null] |
 FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
   MERGE (p:Person {id: goal.IdPlayer})
   MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
+)
+
+FOREACH (player IN [v in value.HomeTeam.Players WHERE v.Status = 1] |
+  MERGE (p:Person {id: player.IdPlayer})
+  MERGE (p)-[:PLAYED_IN]->(match)
+)
+
+FOREACH (player IN [v in value.AwayTeam.Players WHERE v.Status = 1] |
+  MERGE (p:Person {id: player.IdPlayer})
+  MERGE (p)-[:PLAYED_IN]->(match)
 );
 
 MATCH (p:Person)-[:IN_SQUAD]-()<-[:NAMED]-(team:Team)
