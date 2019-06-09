@@ -29,7 +29,7 @@ ORDER BY goals DESC;
 MATCH (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn), (p)-[:REPRESENTS]->(team)
 WITH p, team, count(*) AS goals, apoc.coll.sort(collect(DISTINCT tourn.year)) AS years,
      size((p)-[:PLAYED_IN]->()) AS matches,
-     size([(p)-[pi:PLAYED_IN]->() WHERE exists(pi.minuteOn) | pi]) AS subs
+     size([(p)-[pi:PLAYED_IN]->() WHERE pi.type = "Subbed On" | pi]) AS subs
 return p.name, team.name AS team, goals, years,
 CASE WHEN subs > 0 THEN matches + " (" + subs + ")" ELSE toString(matches) END AS matches
 ORDER BY goals DESC
