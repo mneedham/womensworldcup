@@ -24,13 +24,19 @@ def extract_json(file):
             "IdTeam": soup.select("div.home")[0]["data-team-id"],
             "Score": int(soup.select("div.s-score span.s-scoreText")[0].text.split("-")[0]),
             "Goals": extract_goals(soup, "div.t-scorer.home"),
-            "Players": [ {"IdPlayer": item["data-player-id"], "Status": 1 } for item in soup.select("table.fielded td.home div.p-i-no")]
+            "Players": [ {"IdPlayer": item["data-player-id"], "Status": 1 } for item in soup.select("table.fielded td.home div.p-i-no")],
+            "Substitutions": [{"IdPlayerOn": item.select("div.p-i-no")[0]["data-player-id"]  ,"Minute": item.select("span.substitution-in")[0]["title"].replace("In -", "").strip()}
+                              for item in soup.select("table.substitutes td.home")
+                              if len(item.select("span.substitution-in")) > 0 ]
         }
         document["AwayTeam"] = {
             "IdTeam": soup.select("div.away")[0]["data-team-id"],
             "Score": int(soup.select("div.s-score span.s-scoreText")[0].text.split("-")[1]),
             "Goals": extract_goals(soup, "div.t-scorer.away"),
-            "Players": [ {"IdPlayer": item["data-player-id"], "Status": 1 } for item in soup.select("table.fielded td.away div.p-i-no")]
+            "Players": [ {"IdPlayer": item["data-player-id"], "Status": 1 } for item in soup.select("table.fielded td.away div.p-i-no")],
+            "Substitutions": [{"IdPlayerOn": item.select("div.p-i-no")[0]["data-player-id"]  ,"Minute": item.select("span.substitution-in")[0]["title"].replace("In -", "").strip()}
+                              for item in soup.select("table.substitutes td.away")
+                              if len(item.select("span.substitution-in")) > 0 ]
         }
     return document
 
