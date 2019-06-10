@@ -1,0 +1,305 @@
+= Women's World Cup Guide
+
+:img: https://guides.neo4j.com/sandbox/3.4/img
+
+== Welcome to the World Cup Guide
+
+It's Women's World Cup 2019 and we've dusted off our World Cup scraping scripts and created a Women's World Cup Graph.
+
+This guide is for those who want to import the data locally and query it.
+If you just want to query the data you can find the data on a Neo4j Cloud Instance at https://5d37db5a.databases.neo4j.io/browser/.
+Login with the user `worldcup` and password `worldcup`, and then type `:play womens-worldcup-queries` into the query pane.
+
+Anyway, onwards!
+
+== Importing the Data: Constraints and Indexes
+
+Before we import any data, let's create constraints to make sure we don't create duplicate data, and indexes to speed up the import process.
+
+[source, cypher]
+----
+CREATE CONSTRAINT ON (t:Tournament) ASSERT t.id IS UNIQUE;
+CREATE CONSTRAINT ON (p:Person) ASSERT p.id IS UNIQUE;
+CREATE CONSTRAINT ON (t:Team) ASSERT t.id IS UNIQUE;
+CREATE CONSTRAINT ON (m:Match) ASSERT m.id IS UNIQUE;
+CREATE CONSTRAINT ON (s:Squad) ASSERT s.id IS UNIQUE;
+CREATE INDEX ON :Tournament(shortName);
+----
+
+== Importing the Data: Tournaments
+
+Now let's import the tournaments and teams:
+
+[source, cypher]
+----
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/tournaments.json")
+YIELD value
+MERGE (tourn:Tournament {id: value.id})
+SET tourn.shortName = value.shortName, tourn.name = value.name, tourn.year = value.year
+FOREACH(team in value.teams |
+  MERGE (t:Team {id: team.id}) SET t.name = team.team
+  MERGE (t)-[:PARTICIPATED_IN]->(tourn));
+----
+
+== Importing the Data: Squads
+
+Next up, squads:
+
+[source, cypher]
+----
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/squads.json")
+YIELD value
+MATCH (team:Team {id: value.teamId})
+MATCH (tourn:Tournament {shortName: value.shortName})
+MERGE (squad:Squad {id: team.name + " in " + tourn.year})
+MERGE (team)-[:NAMED]->(squad)
+MERGE (squad)-[:FOR]->(tourn)
+WITH *
+UNWIND value.players AS player
+MERGE (p:Person {id: player.id})
+ON CREATE SET p.name = player.name, p.dob = CASE WHEN player.dob = "" THEN null ELSE date(player.dob) END
+WITH *
+CALL apoc.do.when(player.role = "0", 'MERGE (p)-[:COACH_FOR]->(squad)', 'MERGE (p)-[:IN_SQUAD]->(squad)', {p:p, squad:squad}) YIELD value AS ignore
+RETURN count(*);
+----
+
+== Importing the Data: Matches
+
+And finally, matches:
+
+[source, cypher]
+----
+CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/matches.json")
+YIELD value
+MATCH (tourn:Tournament {id: value.IdSeason})
+MATCH (home:Team {id: value.HomeTeam.IdTeam})
+MATCH (away:Team {id: value.AwayTeam.IdTeam})
+MERGE (match:Match {id:value.IdMatch})
+SET match.stage = value.StageName[0].Description,
+    match.date = date(apoc.date.format(datetime(value.Date).epochMillis, "ms", "yyyy-MM-dd"))
+MERGE (match)-[:IN_TOURNAMENT]->(tourn)
+MERGE (home)-[homePlayed:PLAYED_IN]->(match)
+SET homePlayed.score = value.HomeTeam.Score, homePlayed.penaltyScore = value.HomeTeamPenaltyScore
+MERGE (away)-[awayPlayed:PLAYED_IN]->(match)
+SET awayPlayed.score = value.AwayTeam.Score, awayPlayed.penaltyScore = value.AwayTeamPenaltyScore
+
+FOREACH (goal IN [v in value.HomeTeam.Goals WHERE not v.IdPlayer  is null] |
+  MERGE (p:Person {id: goal.IdPlayer})
+  MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
+)
+
+FOREACH (goal IN [v in value.AwayTeam.Goals WHERE not v.IdPlayer  is null] |
+  MERGE (p:Person {id: goal.IdPlayer})
+  MERGE (p)-[:SCORED_GOAL {minute: goal.Minute}]->(match)
+)
+
+FOREACH (player IN [v in value.HomeTeam.Players WHERE v.Status = 1] |
+  MERGE (p:Person {id: player.IdPlayer})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.type = "Started"
+)
+
+FOREACH (player IN [v in value.AwayTeam.Players WHERE v.Status = 1] |
+  MERGE (p:Person {id: player.IdPlayer})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.type = "Started"
+)
+
+FOREACH (sub IN [v in value.HomeTeam.Substitutions WHERE not v.IdPlayerOn is null] |
+  MERGE (p:Person {id: sub.IdPlayerOn})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.minuteOn = sub.Minute, playedIn.type = "Subbed On"
+)
+
+FOREACH (sub IN [v in value.AwayTeam.Substitutions WHERE not v.IdPlayerOn is null] |
+  MERGE (p:Person {id: sub.IdPlayerOn})
+  MERGE (p)-[playedIn:PLAYED_IN]->(match)
+  SET playedIn.minuteOn = sub.Minute, playedIn.type = "Subbed On"
+);
+----
+
+== Importing the Data: Inferring a player's country
+
+And before we query the data, we'll create relationships directly from `Person` to `Team` based on the squads they've been named in.
+This will make some future queries much easier to write.
+
+[source, cypher]
+----
+MATCH (p:Person)-[:IN_SQUAD]-()<-[:NAMED]-(team:Team)
+MERGE (p)-[:REPRESENTS]->(team);
+----
+
+== Schema
+
+Let's take a look at the schema of the data we've just imported.
+
+Run the following query:
+
+[source,cypher]
+----
+CALL db.schema()
+----
+
+== Who's playing in World Cup 2019?
+
+We'll start with a basic query to find out which teams are playing in World Cup 2019:
+
+[source, cypher]
+----
+MATCH path = (t:Tournament {year: 2019})<-[:PARTICIPATED_IN]-(team)
+RETURN path
+----
+
+We can see a lot of familiar names there, but how many teams are actually participating?
+
+== How many teams are playing in World Cup 2019?
+
+We can write the following query to find the number of teams that have competed in each of the World Cups:
+
+[source, cypher]
+----
+MATCH (t:Tournament)<-[:PARTICIPATED_IN]-(team)
+RETURN t.name, t.year, count(*)
+ORDER BY t.year
+----
+
+Since 2015, 24 teams have participated, which is double the number of teams that participated in the first World Cup in 1991.
+
+== First time participants
+
+Do we have any first time participants?
+We can find out by executing the following query:
+
+[source, cypher]
+----
+MATCH (t:Tournament {year: 2019})<-[:PARTICIPATED_IN]-(team)
+WITH team, [(team)-[:PARTICIPATED_IN]->(other) WHERE other.year < 2019 | other] AS otherTournaments
+WHERE size(otherTournaments) = 0
+RETURN team.name
+----
+
+Just the 4 first time participants.
+
+== How many World Cups have the other teams participated in?
+
+And what about everybody else?
+The following query shows us how many other tournaments that each team has participated in:
+
+[source, cypher]
+----
+MATCH (t:Tournament {year: 2019})<-[:PARTICIPATED_IN]-(team)
+WITH team, [(team)-[:PARTICIPATED_IN]->(other) WHERE other.year < 2019 | other] AS otherTournaments
+RETURN team.name, size(otherTournaments) AS tournaments
+ORDER BY tournaments DESC
+----
+
+== Who won the previous World Cups?
+
+If we want to find the winners of the previous World Cups, we can run the following query:
+
+[source, cypher]
+----
+MATCH (t1:Team)-[p1:PLAYED_IN]-(m:Match)<-[p2:PLAYED_IN]-(t2:Team),
+      (m)-[:IN_TOURNAMENT]->(tourn)
+WHERE id(t1) < id(t2) AND m.stage = "Final"
+RETURN tourn.name AS name, tourn.year AS year,
+       t1.name AS team1, t2.name AS team2,
+       CASE WHEN p1.score = p2.score
+            THEN p1.score + "-" + p2.score + " (" +
+                 p1.penaltyScore + "-" + p2.penaltyScore + ")"
+            ELSE p1.score + "-" + p2.score
+       END AS result,
+       (CASE WHEN p1.score > p2.score THEN t1
+             WHEN p2.score > p1.score THEN t2
+             ELSE
+              CASE WHEN p1.penaltyScore > p2.penaltyScore THEN t1
+                   ELSE t2 END END).name AS winner
+ORDER BY tourn.year
+----
+
+USA have won it 3 times, Germany twice, while Norway and Japan have a single win each.
+Will we get a new winner this time around?
+
+== Who's the top scorer across all World Cups?
+
+One of the most commonly mentioned statistics by football commentators is the top scorer across all World Cups.
+We can run the following query to find the answer:
+
+[source, cypher]
+----
+MATCH (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
+      (p)-[:REPRESENTS]->(team)
+RETURN p.name, team.name AS team, count(*) AS goals,
+       apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+ORDER BY goals DESC
+LIMIT 10
+----
+
+It'll be interesting to see if any of the players in France can close the gap to those at the top.
+Having said that, some of these players scored in the 2015 World Cup, so perhaps they're also playing this year and will extend their lead.
+
+== Which top scorers are playing in 2019?
+
+Who are the top scoring players participating in this year's World Cup?
+
+[source, cypher]
+----
+MATCH (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
+      (p)-[:REPRESENTS]->(team)
+WITH p, team, count(*) AS goals,
+     apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+WHERE (p)-[:IN_SQUAD]->()-[:FOR]->(:Tournament {year: 2019})
+RETURN p.name, team.name AS team, goals
+ORDER BY goals DESC
+LIMIT 10
+----
+
+Marta is playing in her 5th World Cup, but has anyone else been named in more World Cup Squads?
+
+== Multiple World Cups?
+
+How many players have been named in 5 or more World Cup squads?
+Have a guess before you run the next query:
+
+[source, cypher]
+----
+MATCH (player:Person)-[:IN_SQUAD]->(s)<-[:NAMED]-(team), (s)-[:FOR]->(tourn)
+WITH player, team, count(*) AS squads, apoc.coll.sort(collect(tourn.year)) AS years
+WHERE size(years) >= 5
+RETURN player.name AS player, team.name AS team, squads, years
+ORDER BY squads DESC
+----
+
+Formiga is playing in her 7th World Cup!
+
+
+== Goalscoring substitutes
+
+Some players never get a start but have a big impact when they come off the bench.
+The following query returns goal scoring substitutes:
+
+[source, cypher]
+----
+MATCH (p:Person)-[:SCORED_GOAL]->(match)<-[:PLAYED_IN {type: "Subbed On"}]-(p)
+WITH p, count(*) AS goals
+MATCH (p)-[:REPRESENTS]-(team)
+RETURN p.name, team.name, goals
+ORDER BY goals DESC
+LIMIT 10
+----
+
+
+== Top scorer by country
+
+Do you know who your country's top World Cup scorer is?
+
+[source, cypher]
+----
+MATCH (p:Person)-[:SCORED_GOAL]->(match)-[:IN_TOURNAMENT]->(tourn),
+      (p)-[:REPRESENTS]->(team)
+WITH team, p, count(*) AS goals
+ORDER BY team, goals DESC
+WITH team, collect({player: p, goals: goals}) AS topScorers
+RETURN team.name AS team, topScorers[0].player.name AS player, topScorers[0].goals AS goals
+ORDER BY team
+----

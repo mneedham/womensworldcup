@@ -1,0 +1,355 @@
+<style type="text/css" media="screen">
+/*
+.nodes-image {
+	margin:-100;
+}
+*/	
+@import url("//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css");
+
+.imageblock .content img, .image img {max-width: 900px;max-height: 300px;}
+.deck h3, .deck h4 {display: block !important;margin-bottom:8px;margin-top:5px;}
+.listingblock {margin:8px;}
+.pull-bottom {position:relative;bottom:1em;}
+.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
+.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
+.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
+.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}
+.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}
+.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}
+.admonitionblock.note.speaker { display:none; }
+</style>
+<style type="text/css" media="screen">
+/* #editor.maximize-editor .CodeMirror-code { font-size:24px; line-height:26px; } */
+</style>
+<article class="guide" ng-controller="AdLibDataController">
+  <carousel class="deck container-fluid">
+    <!--slide class="row-fluid">
+      <div class="col-sm-3">
+        <h3>Women&#8217;s World Cup Sandbox</h3>
+        <p class="lead">Information</p>
+			<!dl>
+				
+				
+				
+				
+				
+			</dl>
+		</div>
+      <div class="col-sm-9">
+        <figure>
+          <img style="width:300px" src=""/>
+        </figure>
+      </div>
+    </slide-->
+    
+
+
+   <h4>Women&#8217;s World Cup Sandbox</h4>
+   
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Welcome to the World Cup Sandbox</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>It&#8217;s Women&#8217;s World Cup 2019 and we&#8217;ve created a special sandbox for you to play around with while you follow the tournament.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Schema</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>We&#8217;ve imported all the matches, squads, lineups, and scorers from all the World Cups between 1991 and 2019.
+Let&#8217;s take a look at the schema.</p>
+</div>
+<div class="paragraph">
+<p>Run the following query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->CALL db.schema()<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Who&#8217;s playing in World Cup 2019?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>We&#8217;ll start with a basic query to find out which teams are playing in World Cup 2019:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH path = (t:Tournament {year: 2019})&lt;-[:PARTICIPATED_IN]-(team)
+RETURN path<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can see a lot of familiar names there, but how many teams are actually participating?</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>How many teams are playing in World Cup 2019?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>We can write the following query to find the number of teams that have competed in each of the World Cups:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (t:Tournament)&lt;-[:PARTICIPATED_IN]-(team)
+RETURN t.name, t.year, count(*)
+ORDER BY t.year<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Since 2015, 24 teams have participated, which is double the number of teams that participated in the first World Cup in 1991.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>First time participants</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Do we have any first time participants?
+We can find out by executing the following query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (t:Tournament {year: 2019})&lt;-[:PARTICIPATED_IN]-(team)
+WITH team, [(team)-[:PARTICIPATED_IN]-&gt;(other) WHERE other.year &lt; 2019 | other] AS otherTournaments
+WHERE size(otherTournaments) = 0
+RETURN team.name<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Just the 4 first time participants.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>How many World Cups have the other teams participated in?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>And what about everybody else?
+The following query shows us how many other tournaments that each team has participated in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (t:Tournament {year: 2019})&lt;-[:PARTICIPATED_IN]-(team)
+WITH team, [(team)-[:PARTICIPATED_IN]-&gt;(other) WHERE other.year &lt; 2019 | other] AS otherTournaments
+RETURN team.name, size(otherTournaments) AS tournaments
+ORDER BY tournaments DESC<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Who won the previous World Cups?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>If we want to find the winners of the previous World Cups, we can run the following query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (t1:Team)-[p1:PLAYED_IN]-(m:Match)&lt;-[p2:PLAYED_IN]-(t2:Team),
+      (m)-[:IN_TOURNAMENT]-&gt;(tourn)
+WHERE id(t1) &lt; id(t2) AND m.stage = "Final"
+RETURN tourn.name AS name, tourn.year AS year,
+       t1.name AS team1, t2.name AS team2,
+       CASE WHEN p1.score = p2.score
+            THEN p1.score + "-" + p2.score + " (" +
+                 p1.penaltyScore + "-" + p2.penaltyScore + ")"
+            ELSE p1.score + "-" + p2.score
+       END AS result,
+       (CASE WHEN p1.score &gt; p2.score THEN t1
+             WHEN p2.score &gt; p1.score THEN t2
+             ELSE
+              CASE WHEN p1.penaltyScore &gt; p2.penaltyScore THEN t1
+                   ELSE t2 END END).name AS winner
+ORDER BY tourn.year<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>USA have won it 3 times, Germany twice, while Norway and Japan have a single win each.
+Will we get a new winner this time around?</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Who&#8217;s the top scorer across all World Cups?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>One of the most commonly mentioned statistics by football commentators is the top scorer across all World Cups.
+We can run the following query to find the answer:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (p:Person)-[:SCORED_GOAL]-&gt;(match)-[:IN_TOURNAMENT]-&gt;(tourn),
+      (p)-[:REPRESENTS]-&gt;(team)
+RETURN p.name, team.name AS team, count(*) AS goals,
+       apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+ORDER BY goals DESC
+LIMIT 10<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;ll be interesting to see if any of the players in France can close the gap to those at the top.
+Having said that, some of these players scored in the 2015 World Cup, so perhaps they&#8217;re also playing this year and will extend their lead.</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Which top scorers are playing in 2019?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Who are the top scoring players participating in this year&#8217;s World Cup?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (p:Person)-[:SCORED_GOAL]-&gt;(match)-[:IN_TOURNAMENT]-&gt;(tourn),
+      (p)-[:REPRESENTS]-&gt;(team)
+WITH p, team, count(*) AS goals,
+     apoc.coll.sort(collect(DISTINCT tourn.year)) AS years
+WHERE (p)-[:IN_SQUAD]-&gt;()-[:FOR]-&gt;(:Tournament {year: 2019})
+RETURN p.name, team.name AS team, goals
+ORDER BY goals DESC
+LIMIT 10<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Marta is playing in her 5th World Cup, but has anyone else been named in more World Cup Squads?</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Multiple World Cups?</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>How many players have been named in 5 or more World Cup squads?
+Have a guess before you run the next query:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (player:Person)-[:IN_SQUAD]-&gt;(s)&lt;-[:NAMED]-(team), (s)-[:FOR]-&gt;(tourn)
+WITH player, team, count(*) AS squads, apoc.coll.sort(collect(tourn.year)) AS years
+WHERE size(years) &gt;= 5
+RETURN player.name AS player, team.name AS team, squads, years
+ORDER BY squads DESC<!--/code--></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Formiga is playing in her 7th World Cup!</p>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Goalscoring substitutes</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Some players never get a start but have a big impact when they come off the bench.
+The following query returns goal scoring substitutes:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (p:Person)-[:SCORED_GOAL]-&gt;(match)&lt;-[:PLAYED_IN {type: "Subbed On"}]-(p)
+WITH p, count(*) AS goals
+MATCH (p)-[:REPRESENTS]-(team)
+RETURN p.name, team.name, goals
+ORDER BY goals DESC
+LIMIT 10<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+
+
+
+<slide class="row-fluid">
+  <div class="col-sm-12">
+    <h3>Top scorer by country</h3>
+    <br/>
+    <div>
+      <div class="paragraph">
+<p>Do you know who your country&#8217;s top World Cup scorer is?</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre mode="cypher"  class="highlight pre-scrollable programlisting cm-s-neo code runnable standalone-example ng-binding" data-lang="cypher" lang="cypher"><!--code class="cypher language-cypher"-->MATCH (p:Person)-[:SCORED_GOAL]-&gt;(match)-[:IN_TOURNAMENT]-&gt;(tourn),
+      (p)-[:REPRESENTS]-&gt;(team)
+WITH team, p, count(*) AS goals
+ORDER BY team, goals DESC
+WITH team, collect({player: p, goals: goals}) AS topScorers
+RETURN team.name AS team, topScorers[0].player.name AS player, topScorers[0].goals AS goals
+ORDER BY team<!--/code--></pre>
+</div>
+</div>
+	</div>
+  </div>
+</slide>
+  </carousel>
+</article>
