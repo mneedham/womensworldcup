@@ -17,7 +17,7 @@ with open("data/squads.json", "w") as squads_file:
                         for player in soup.select("div.fi-team__members div.fi-p"):
                             player_element = player.select("div.fi-p__n a")[0]
                             player_id = player_element["href"].split("/")[-2].strip()
-                            name = player_element["title"]
+                            name = player_element["title"].title()
                             role = "0" if "coach" in player_element["href"] else player["data-member-pos"]
                             dob = ""
                             print(player_id, name, role, dob)
@@ -30,7 +30,7 @@ with open("data/squads.json", "w") as squads_file:
                         soup = BeautifulSoup(fh.read(), "html.parser")
                         for player in soup.select("div.p-list div.p-i-no"):
                             player_id = player["data-player-id"]
-                            name = player["data-player-name"]
+                            name = player["data-player-name"].title()
                             role = player.get("data-player-role", "")
 
                             dob = player.select("div.p-ag span")[0].get("data-birthdate", "")

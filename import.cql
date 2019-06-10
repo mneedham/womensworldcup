@@ -1,5 +1,9 @@
-CREATE CONSTRAINT ON (t:Tournament)
-ASSERT t.id IS UNIQUE;
+CREATE CONSTRAINT ON (t:Tournament) ASSERT t.id IS UNIQUE;
+CREATE CONSTRAINT ON (p:Person) ASSERT p.id IS UNIQUE;
+CREATE CONSTRAINT ON (t:Team) ASSERT t.id IS UNIQUE;
+CREATE CONSTRAINT ON (m:Match) ASSERT m.id IS UNIQUE;
+CREATE CONSTRAINT ON (s:Squad) ASSERT s.id IS UNIQUE;
+CREATE INDEX ON :Tournament(shortName);
 
 CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/tournaments.json")
 YIELD value
@@ -8,7 +12,6 @@ SET tourn.shortName = value.shortName, tourn.name = value.name, tourn.year = val
 FOREACH(team in value.teams |
   MERGE (t:Team {id: team.id}) SET t.name = team.team
   MERGE (t)-[:PARTICIPATED_IN]->(tourn));
-
 
 CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/squads.json")
 YIELD value
@@ -27,7 +30,7 @@ RETURN count(*);
 
 CALL apoc.load.json("https://github.com/mneedham/womensworldcup/raw/master/data/matches.json")
 YIELD value
-MATCH (tourn:Tournament {name: value.SeasonShortName[0].Description})
+MATCH (tourn:Tournament {id: value.IdSeason})
 MATCH (home:Team {id: value.HomeTeam.IdTeam})
 MATCH (away:Team {id: value.AwayTeam.IdTeam})
 MERGE (match:Match {id:value.IdMatch})
