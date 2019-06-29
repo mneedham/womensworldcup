@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import json
 import os
 
+combined_squads = []
+
 with open("data/squads.json", "w") as squads_file:
     for dir in os.listdir("data/raw/tournaments"):
         if os.path.isdir(f"data/raw/tournaments/{dir}"):
@@ -23,7 +25,7 @@ with open("data/squads.json", "w") as squads_file:
                             print(player_id, name, role, dob)
                             squad_json["players"].append({"id": player_id, "name": name, "role": role, "dob": dob})
                             # tournament_json["teams"].append({"team": team.text, "id": team["href"].split("/")[-2].replace("team=", "")})
-                    squads_file.write(f"{json.dumps(squad_json)}\n")
+                    combined_squads.append(squad_json)
 
                 else:
                     with open(file, "r") as fh:
@@ -38,4 +40,5 @@ with open("data/squads.json", "w") as squads_file:
                             print(player_id, name, role, dob)
                             squad_json["players"].append({"id": player_id, "name": name, "role": role, "dob": dob})
                             # tournament_json["teams"].append({"team": team.text, "id": team["href"].split("/")[-2].replace("team=", "")})
-                    squads_file.write(f"{json.dumps(squad_json)}\n")
+                    combined_squads.append(squad_json)
+    squads_file.write(f"{json.dumps(combined_squads)}")
