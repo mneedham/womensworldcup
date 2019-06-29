@@ -13,6 +13,7 @@ tournaments = {
     "france2019": "278513"
 }
 
+combined_tournaments = []
 with open("data/tournaments.json", "w") as tournaments_file:
     for file in glob.glob("data/raw/tournaments/*.html"):
         print(file)
@@ -25,7 +26,7 @@ with open("data/tournaments.json", "w") as tournaments_file:
                 tournament_json["name"] = name
                 for team in soup.select("div.fi-teams-list a.fi-team-card"):
                     tournament_json["teams"].append({"team": team.select("div.fi-team-card__name")[0].text.strip(), "id": team["data-team"]})
-            tournaments_file.write(f"{json.dumps(tournament_json)}\n")
+            combined_tournaments.append(tournament_json)
         else:
             with open(file, "r") as fh:
                 soup = BeautifulSoup(fh.read(), "html.parser")
@@ -33,4 +34,5 @@ with open("data/tournaments.json", "w") as tournaments_file:
                 tournament_json["name"] = name
                 for team in soup.select("div#qualifiedteamscontainer li a"):
                     tournament_json["teams"].append({"team": team.text, "id": team["href"].split("/")[-2].replace("team=", "")})
-            tournaments_file.write(f"{json.dumps(tournament_json)}\n")
+            combined_tournaments.append(tournament_json)
+    tournaments_file.write(f"{json.dumps(combined_tournaments)}")
