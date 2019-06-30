@@ -40,13 +40,17 @@ def extract_json(file):
         }
     return document
 
+combined_matches = []
+
 with open("data/matches.json", "w") as tournaments_file:
     for file in glob.glob("data/raw/matches/*.json"):
         with open(file, "r") as json_file:
-            response = json_file.read()
-            tournaments_file.write(f"{response}\n")
+            response = json.load(json_file)
+            combined_matches.append(response)
 
     for file in glob.glob("data/raw/matches/*.html"):
         print(file)
         document = extract_json(file)
-        tournaments_file.write(f"{json.dumps(document)}\n")
+        combined_matches.append(document)
+
+    tournaments_file.write(f"{json.dumps(combined_matches)}")
